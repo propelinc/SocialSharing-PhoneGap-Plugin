@@ -30,6 +30,10 @@ SocialSharing.prototype.shareWithOptions = function (options, successCallback, e
   cordova.exec(successCallback, this._getErrorCallback(errorCallback, "shareWithOptions"), "SocialSharing", "shareWithOptions", [options]);
 };
 
+SocialSharing.prototype.shareSocial = function (options, successCallback, errorCallback) {
+  cordova.exec(successCallback, this._getErrorCallback(errorCallback, "shareSocial"), "SocialSharing", "shareSocial", [options]);
+};
+
 SocialSharing.prototype.share = function (message, subject, fileOrFileArray, url, successCallback, errorCallback) {
   cordova.exec(successCallback, this._getErrorCallback(errorCallback, "share"), "SocialSharing", "share", [message, subject, this._asArray(fileOrFileArray), url]);
 };

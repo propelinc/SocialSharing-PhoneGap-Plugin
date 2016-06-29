@@ -212,6 +212,116 @@ public class SocialSharing extends CordovaPlugin {
     );
   }
 
+  private boolean shareSocial(CallbackContext callbackContext, JSONObject jsonObject) {
+    return doSocialSendIntent(
+        callbackContext,
+        jsonObject.optString("message", null),
+        jsonObject.optString("subject", null),
+        jsonObject.optString("file", null),
+        jsonObject.optString("url", null),
+        jsonObject.optString("chooserTitle", null)
+    );
+  }
+
+  private boolean doSocialSendIntent(
+      final CallbackContext callbackContext,
+      final String msg,
+      final String subject,
+      final String file,
+      final String url,
+      final String chooserTitle) {
+
+    final CordovaInterface mycordova = cordova;
+    final CordovaPlugin plugin = this;
+
+    cordova.getThreadPool().execute(new SocialSharingRunnable(callbackContext) {
+      public void run() {
+        String message = msg;
+
+        final String dir = getDownloadDir();
+        if (notEmpty(file) && dir != null) {
+          try {
+            Uri fileUri = getFileUriAndSetType(sendIntent, dir, file, subject, 0);
+            if (notEmpty(fileUri)) {
+              sendIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
+            }
+          }
+          catch (Exception e) {
+            callbackContext.error(e.getMessage());
+          }
+        }
+
+        // add the URL to the message, as there seems to be no separate field
+        if (notEmpty(url)) {
+          if (notEmpty(message)) {
+            message += " " + url;
+          } else {
+            message = url;
+          }
+        }
+
+        Intent emailIntent = new Intent();
+        emailIntent.setAction(Intent.ACTION_SEND);
+        emailIntent.putExtra(Intent.EXTRA_TEXT, msg);
+        emailIntent.putExtra(Intent.EXTRA_SUBJECT, subject);
+        emailIntent.setType("message/rfc822");
+
+        // this was added to start the intent in a new window as suggested in #300 to prevent crashes upon return
+        emailIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        PackageManager pm = getPackageManager();
+        Intent sendIntent = new Intent(Intent.ACTION_SEND);
+        sendIntent.setType("text/plain");
+        List<ResolveInfo> resInfo = pm.queryIntentActivities(sendIntent, 0);
+        List<LabeledIntent> intentList = new ArrayList<LabeledIntent>();
+
+        for (int i = 0; i < resInfo.size(); i++) {
+          // Extract the label, append it, and repackage it in a LabeledIntent
+          ResolveInfo ri = resInfo.get(i);
+          String packageName = ri.activityInfo.packageName;
+          if (packageName.contains("android.email")) {
+            emailIntent.setPackage(packageName);
+          } else if (packageName.contains("twitter") || packageName.contains("facebook") || packageName.contains("mms")) {
+            Intent intent = new Intent();
+            intent.setComponent(new ComponentName(packageName, ri.activityInfo.name));
+            intent.setAction(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            if (packageName.contains("twitter")) {
+              intent.putExtra(Intent.EXTRA_TEXT, msg);
+            } else if (packageName.contains("facebook")) {
+              // Warning: Facebook IGNORES our text. They say "These fields are intended for users to express themselves. Pre-filling these fields erodes the authenticity of the user voice."
+              // One workaround is to use the Facebook SDK to post, but that doesn't allow the user to choose how they want to share. We can also make a custom landing page, and the link
+              // will show the <meta content ="..."> text from that page with our link in Facebook.
+              intent.putExtra(Intent.EXTRA_TEXT, msg);
+            } else if(packageName.contains("mms")) {
+              intent.putExtra(Intent.EXTRA_TEXT, msg);
+              intent.putExtra(android.content.Intent.EXTRA_TEXT, message);
+              // sometimes required when the user picks share via sms
+              if (Build.VERSION.SDK_INT < 21) { // LOLLIPOP
+                intent.putExtra("sms_body", message);
+              }
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+            intentList.add(new LabeledIntent(intent, packageName, ri.loadLabel(pm), ri.icon));
+          }
+        }
+
+        LabeledIntent[] extraIntents = intentList.toArray(new LabeledIntent[intentList.size()]);
+        Intent chooser = Intent.createChooser(emailIntent, chooserTitle);
+        chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, extraIntents);
+
+        // experimenting a bit
+        // as an experiment for #300 we're explicitly running it on the ui thread here
+        cordova.getActivity().runOnUiThread(new Runnable() {
+          public void run() {
+            mycordova.startActivityForResult(plugin, chooser, ACTIVITY_CODE_SEND__BOOLRESULT);
+          }
+        });
+      }
+    });
+    return true;
+  }
+
   private boolean doSendIntent(
       final CallbackContext callbackContext,
       final String msg,
@@ -370,7 +480,7 @@ public class SocialSharing extends CordovaPlugin {
     }else {
       sendIntent.setType("image/*");
     }
-    
+
     if (image.startsWith("http") || image.startsWith("www/")) {
       String filename = getFileName(image);
       localImage = "file://" + dir + "/" + filename;
