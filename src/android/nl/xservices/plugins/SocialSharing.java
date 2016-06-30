@@ -217,7 +217,6 @@ public class SocialSharing extends CordovaPlugin {
         callbackContext,
         jsonObject.optString("message", null),
         jsonObject.optString("subject", null),
-        jsonObject.optString("file", null),
         jsonObject.optString("url", null),
         jsonObject.optString("chooserTitle", null)
     );
@@ -227,7 +226,6 @@ public class SocialSharing extends CordovaPlugin {
       final CallbackContext callbackContext,
       final String msg,
       final String subject,
-      final String file,
       final String url,
       final String chooserTitle) {
 
@@ -237,19 +235,6 @@ public class SocialSharing extends CordovaPlugin {
     cordova.getThreadPool().execute(new SocialSharingRunnable(callbackContext) {
       public void run() {
         String message = msg;
-
-        final String dir = getDownloadDir();
-        if (notEmpty(file) && dir != null) {
-          try {
-            Uri fileUri = getFileUriAndSetType(sendIntent, dir, file, subject, 0);
-            if (notEmpty(fileUri)) {
-              sendIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
-            }
-          }
-          catch (Exception e) {
-            callbackContext.error(e.getMessage());
-          }
-        }
 
         // add the URL to the message, as there seems to be no separate field
         if (notEmpty(url)) {
