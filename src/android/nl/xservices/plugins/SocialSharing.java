@@ -249,8 +249,7 @@ public class SocialSharing extends CordovaPlugin {
           }
         }
 
-        Intent emailIntent = new Intent();
-        emailIntent.setAction(Intent.ACTION_SEND);
+        Intent emailIntent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"));
         emailIntent.putExtra(Intent.EXTRA_TEXT, msg);
         emailIntent.putExtra(Intent.EXTRA_SUBJECT, subject);
         emailIntent.setType("message/rfc822");
@@ -258,52 +257,52 @@ public class SocialSharing extends CordovaPlugin {
         // this was added to start the intent in a new window as suggested in #300 to prevent crashes upon return
         emailIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-        // PackageManager pm = cordova.getActivity().getPackageManager();
-        // Intent sendIntent = new Intent(Intent.ACTION_SEND);
-        // sendIntent.setType("text/plain");
-        // List<ResolveInfo> resInfo = pm.queryIntentActivities(sendIntent, 0);
-        // List<LabeledIntent> intentList = new ArrayList<LabeledIntent>();
-        //
-        // for (int i = 0; i < resInfo.size(); i++) {
-        //   // Extract the label, append it, and repackage it in a LabeledIntent
-        //   ResolveInfo ri = resInfo.get(i);
-        //   String packageName = ri.activityInfo.packageName;
-        //   if (packageName.contains("android.email")) {
-        //     emailIntent.setPackage(packageName);
-        //   } else if (
-        //       packageName.contains("android.talk") ||
-        //       packageName.contains("twitter") ||
-        //       packageName.contains("facebook") ||
-        //       packageName.contains("whatsapp") ||
-        //       packageName.contains("mms")) {
-        //
-        //     Intent intent = new Intent();
-        //     intent.setComponent(new ComponentName(packageName, ri.activityInfo.name));
-        //     intent.setAction(Intent.ACTION_SEND);
-        //     intent.setType("text/plain");
-        //     if (packageName.contains("twitter")) {
-        //       intent.putExtra(Intent.EXTRA_TEXT, msg);
-        //     } else if (packageName.contains("facebook")) {
-        //       // Warning: Facebook IGNORES our text. They say "These fields are intended for users to express themselves. Pre-filling these fields erodes the authenticity of the user voice."
-        //       // One workaround is to use the Facebook SDK to post, but that doesn't allow the user to choose how they want to share. We can also make a custom landing page, and the link
-        //       // will show the <meta content ="..."> text from that page with our link in Facebook.
-        //       intent.putExtra(Intent.EXTRA_TEXT, msg);
-        //     } else if(packageName.contains("mms")) {
-        //       intent.putExtra(Intent.EXTRA_TEXT, msg);
-        //       intent.putExtra(android.content.Intent.EXTRA_TEXT, message);
-        //       // sometimes required when the user picks share via sms
-        //       if (Build.VERSION.SDK_INT < 21) { // LOLLIPOP
-        //         intent.putExtra("sms_body", message);
-        //       }
-        //     }
-        //     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
-        //     intentList.add(new LabeledIntent(intent, packageName, ri.loadLabel(pm), ri.icon));
-        //   }
-        // }
-        //
-        // LabeledIntent[] extraIntents = intentList.toArray(new LabeledIntent[intentList.size()]);
+        PackageManager pm = cordova.getActivity().getPackageManager();
+        Intent sendIntent = new Intent(Intent.ACTION_SEND);
+        sendIntent.setType("text/plain");
+        List<ResolveInfo> resInfo = pm.queryIntentActivities(sendIntent, 0);
+        List<LabeledIntent> intentList = new ArrayList<LabeledIntent>();
+
+        for (int i = 0; i < resInfo.size(); i++) {
+          // Extract the label, append it, and repackage it in a LabeledIntent
+          ResolveInfo ri = resInfo.get(i);
+          String packageName = ri.activityInfo.packageName;
+          if (packageName.contains("android.email")) {
+            emailIntent.setPackage(packageName);
+          } else if (
+              packageName.contains("android.talk") ||
+              packageName.contains("twitter") ||
+              packageName.contains("facebook") ||
+              packageName.contains("whatsapp") ||
+              packageName.contains("mms")) {
+
+            Intent intent = new Intent();
+            intent.setComponent(new ComponentName(packageName, ri.activityInfo.name));
+            intent.setAction(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            if (packageName.contains("twitter")) {
+              intent.putExtra(Intent.EXTRA_TEXT, msg);
+            } else if (packageName.contains("facebook")) {
+              // Warning: Facebook IGNORES our text. They say "These fields are intended for users to express themselves. Pre-filling these fields erodes the authenticity of the user voice."
+              // One workaround is to use the Facebook SDK to post, but that doesn't allow the user to choose how they want to share. We can also make a custom landing page, and the link
+              // will show the <meta content ="..."> text from that page with our link in Facebook.
+              intent.putExtra(Intent.EXTRA_TEXT, msg);
+            } else if(packageName.contains("mms")) {
+              intent.putExtra(Intent.EXTRA_TEXT, msg);
+              intent.putExtra(android.content.Intent.EXTRA_TEXT, message);
+              // sometimes required when the user picks share via sms
+              if (Build.VERSION.SDK_INT < 21) { // LOLLIPOP
+                intent.putExtra("sms_body", message);
+              }
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+            intentList.add(new LabeledIntent(intent, packageName, ri.loadLabel(pm), ri.icon));
+          }
+        }
+
+        LabeledIntent[] extraIntents = intentList.toArray(new LabeledIntent[intentList.size()]);
         final Intent chooser = Intent.createChooser(emailIntent, chooserTitle);
-        // chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, extraIntents);
+        chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, extraIntents);
 
         // experimenting a bit
         // as an experiment for #300 we're explicitly running it on the ui thread here
