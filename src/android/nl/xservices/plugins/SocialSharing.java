@@ -249,7 +249,8 @@ public class SocialSharing extends CordovaPlugin {
           }
         }
 
-        Intent emailIntent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"));
+        Intent emailIntent = new Intent();
+        emailIntent.setAction(Intent.ACTION_SEND);
         emailIntent.putExtra(Intent.EXTRA_TEXT, msg);
         emailIntent.putExtra(Intent.EXTRA_SUBJECT, subject);
         emailIntent.setType("message/rfc822");
