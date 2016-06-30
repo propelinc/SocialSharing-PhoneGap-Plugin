@@ -274,7 +274,6 @@ public class SocialSharing extends CordovaPlugin {
               packageName.contains("android.talk") ||
               packageName.contains("twitter") ||
               packageName.contains("facebook") ||
-              packageName.contains("whatsapp") ||
               packageName.contains("mms")) {
 
             Intent intent = new Intent();
