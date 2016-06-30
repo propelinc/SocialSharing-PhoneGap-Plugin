@@ -293,7 +293,7 @@ public class SocialSharing extends CordovaPlugin {
         }
 
         LabeledIntent[] extraIntents = intentList.toArray(new LabeledIntent[intentList.size()]);
-        Intent chooser = Intent.createChooser(emailIntent, chooserTitle);
+        final Intent chooser = Intent.createChooser(emailIntent, chooserTitle);
         chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, extraIntents);
 
         // experimenting a bit
