@@ -6,6 +6,7 @@ import android.content.*;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.pm.LabeledIntent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -254,7 +255,7 @@ public class SocialSharing extends CordovaPlugin {
         // this was added to start the intent in a new window as suggested in #300 to prevent crashes upon return
         emailIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-        PackageManager pm = getPackageManager();
+        PackageManager pm = cordova.getActivity().getPackageManager();
         Intent sendIntent = new Intent(Intent.ACTION_SEND);
         sendIntent.setType("text/plain");
         List<ResolveInfo> resInfo = pm.queryIntentActivities(sendIntent, 0);
