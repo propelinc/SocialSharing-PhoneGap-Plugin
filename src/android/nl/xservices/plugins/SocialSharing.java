@@ -280,15 +280,9 @@ public class SocialSharing extends CordovaPlugin {
             intent.setComponent(new ComponentName(packageName, ri.activityInfo.name));
             intent.setAction(Intent.ACTION_SEND);
             intent.setType("text/plain");
-            if (packageName.contains("twitter")) {
-              intent.putExtra(Intent.EXTRA_TEXT, message);
-            } else if (packageName.contains("facebook")) {
-              // Warning: Facebook IGNORES our text. They say "These fields are intended for users to express themselves. Pre-filling these fields erodes the authenticity of the user voice."
-              // One workaround is to use the Facebook SDK to post, but that doesn't allow the user to choose how they want to share. We can also make a custom landing page, and the link
-              // will show the <meta content ="..."> text from that page with our link in Facebook.
-              intent.putExtra(Intent.EXTRA_TEXT, message);
-            } else if(packageName.contains("mms")) {
-              intent.putExtra(Intent.EXTRA_TEXT, message);
+            intent.putExtra(Intent.EXTRA_TEXT, message);
+
+            if(packageName.contains("mms") || packageName.contains("android.talk")) {
               intent.putExtra(android.content.Intent.EXTRA_TEXT, message);
               // sometimes required when the user picks share via sms
               if (Build.VERSION.SDK_INT < 21) { // LOLLIPOP
