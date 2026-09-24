@@ -1,16 +1,18 @@
 package nl.xservices.plugins;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
 public class ShareChooserPendingIntent extends BroadcastReceiver {
     public static String chosenComponent = null;
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (intent.getExtras() != null) {
-            ShareChooserPendingIntent.chosenComponent = intent.getExtras().get(Intent.EXTRA_CHOSEN_COMPONENT).toString();
+        final ComponentName component = intent.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT);
+        if (component != null) {
+            // "pkg/cls", not toString()'s "ComponentInfo{pkg/cls}"
+            ShareChooserPendingIntent.chosenComponent = component.flattenToString();
         }
     }
 }
